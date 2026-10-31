@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Финансовый трекер · PRO</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e1b4b">
+    <!-- Подключаем графики -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="dark">
+    <div class="app" id="app">
+        <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
+        <div class="toolbar glass">
+            <div class="lang-group">
+                <button data-lang="ru" class="active" id="langRu">Рус</button>
+                <button data-lang="be" id="langBe">Бел</button>
+                <button data-lang="en" id="langEn">Eng</button>
+            </div>
+            <div class="theme-currency">
+                <button id="themeToggle" title="Тема">☀️ Светлая</button>
+                <div class="select-wrapper">
+                    <select id="currencySelect">
+                        <option value="BYN">Br BYN</option>
+                        <option value="USD">$ USD</option>
+                        <option value="EUR">€ EUR</option>
+                        <option value="RUB">₽ RUB</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- БЮДЖЕТ (НОВОЕ) -->
+        <div class="budget-panel glass" id="budgetPanel">
+            <div class="budget-header">
+                <span id="budgetLabel">Лимит на месяц</span>
+                <input type="number" id="budgetInput" placeholder="0" min="0">
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="budget-info" id="budgetInfo">Осталось: 0.00</div>
+        </div>
+
+        <!-- ВВОД -->
+        <div class="input-panel glass">
+            <div class="input-fields">
+                <input type="number" id="amountInput" placeholder="Сумма" min="0" step="0.01">
+                <input type="text" id="descInput" placeholder="Описание">
+                <select id="categorySelect">
+                    <option value="other">📦 Другое</option>
+                    <option value="food">🍔 Еда</option>
+                    <option value="transport">🚗 Транспорт</option>
+                    <option value="fun">🎮 Развлечения</option>
+                    <option value="health">💊 Здоровье</option>
+                    <option value="salary">💼 Зарплата</option>
+                </select>
+            </div>
+            <div class="input-buttons">
+                <button class="type-btn income-btn active" id="typeIncome">+ Доход</button>
+                <button class="type-btn expense-btn" id="typeExpense">− Расход</button>
+            </div>
+            <button id="submitBtn" class="submit-btn">Добавить</button>
+        </div>
+
+        <!-- БАЛАНС -->
+        <div class="balance-block glass balance-highlight">
+            <span class="balance-label" id="balanceLabel">Баланс</span>
+            <span class="balance-value" id="balanceValue">Br0.00</span>
+        </div>
+
+        <!-- ГРАФИК (НОВОЕ) -->
+        <div class="chart-container glass">
+            <canvas id="myChart"></canvas>
+        </div>
+
+        <!-- ИСТОРИЯ -->
+        <div class="history-section glass">
+            <div class="history-title">
+                <span id="historyTitle">История</span>
+                <div class="history-actions">
+                    <button class="action-btn" id="exportBtn">⬇ Экспорт CSV</button>
+                    <label class="action-btn">
+                        ⬆ Импорт
+                        <input type="file" id="importInput" accept=".csv" style="display:none;">
+                    </label>
+                    <button class="clear-btn" id="clearAllBtn">🗑 Очистить</button>
+                </div>
+            </div>
+            <ul class="history-list" id="historyList"></ul>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
