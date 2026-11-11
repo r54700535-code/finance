@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Финансовый трекер · PRO</title>
+    <title>Финансовый трекер · PRO MAX</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e1b4b">
-    <!-- Подключаем графики -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="dark">
@@ -32,7 +31,7 @@
             </div>
         </div>
 
-        <!-- БЮДЖЕТ (НОВОЕ) -->
+        <!-- БЮДЖЕТ -->
         <div class="budget-panel glass" id="budgetPanel">
             <div class="budget-header">
                 <span id="budgetLabel">Лимит на месяц</span>
@@ -47,7 +46,7 @@
         <!-- ВВОД -->
         <div class="input-panel glass">
             <div class="input-fields">
-                <input type="number" id="amountInput" placeholder="Сумма" min="0" step="0.01">
+                <input type="number" id="amountInput" placeholder="Сумма" min="0" step="0.01" inputmode="none">
                 <input type="text" id="descInput" placeholder="Описание">
                 <select id="categorySelect">
                     <option value="other">📦 Другое</option>
@@ -65,15 +64,41 @@
             <button id="submitBtn" class="submit-btn">Добавить</button>
         </div>
 
+        <!-- КАСТОМНАЯ КЛАВИАТУРА -->
+        <div id="customKeyboard" class="custom-keyboard">
+            <div class="kb-btn" data-val="1">1</div><div class="kb-btn" data-val="2">2</div><div class="kb-btn" data-val="3">3</div>
+            <div class="kb-btn" data-val="4">4</div><div class="kb-btn" data-val="5">5</div><div class="kb-btn" data-val="6">6</div>
+            <div class="kb-btn" data-val="7">7</div><div class="kb-btn" data-val="8">8</div><div class="kb-btn" data-val="9">9</div>
+            <div class="kb-btn" data-val=".">.</div><div class="kb-btn" data-val="0">0</div><div class="kb-btn" data-val="back">⌫</div>
+        </div>
+
         <!-- БАЛАНС -->
         <div class="balance-block glass balance-highlight">
             <span class="balance-label" id="balanceLabel">Баланс</span>
             <span class="balance-value" id="balanceValue">Br0.00</span>
         </div>
 
-        <!-- ГРАФИК (НОВОЕ) -->
-        <div class="chart-container glass">
-            <canvas id="myChart"></canvas>
+        <!-- ПЕРЕКЛЮЧАТЕЛЬ ПЕРИОДОВ -->
+        <div class="period-switcher glass">
+            <button class="period-btn active" data-period="all" id="perAll">Все время</button>
+            <button class="period-btn" data-period="month" id="perMonth">Месяц</button>
+            <button class="period-btn" data-period="week" id="perWeek">Неделя</button>
+        </div>
+
+        <!-- ГРАФИКИ -->
+        <div class="chart-container glass" style="height: 200px; margin-bottom: 10px;">
+            <canvas id="pieChart"></canvas>
+        </div>
+        <div class="chart-container glass" style="height: 200px;">
+            <canvas id="barChart"></canvas>
+        </div>
+
+        <!-- ТЕПЛОВАЯ КАРТА -->
+        <div class="heatmap-section glass">
+            <div class="history-title">
+                <span id="heatmapTitle">Карта расходов (Месяц)</span>
+            </div>
+            <div class="heatmap-grid" id="heatmapGrid"></div>
         </div>
 
         <!-- ИСТОРИЯ -->
@@ -81,7 +106,7 @@
             <div class="history-title">
                 <span id="historyTitle">История</span>
                 <div class="history-actions">
-                    <button class="action-btn" id="exportBtn">⬇ Экспорт CSV</button>
+                    <button class="action-btn" id="exportBtn">⬇ Экспорт</button>
                     <label class="action-btn">
                         ⬆ Импорт
                         <input type="file" id="importInput" accept=".csv" style="display:none;">
