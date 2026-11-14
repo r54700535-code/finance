@@ -8,21 +8,21 @@
 
     let currentLang = 'ru', currentCurrency = 'BYN', currentType = 'income', currentPeriod = 'all';
     let transactions = JSON.parse(localStorage.getItem('myTransactions')) || [];
-    let budgetLimit = parseFloat(localStorage.getItem('myBudget')) || 0;
+    // Храним лимит в USD
+    let budgetLimitUSD = parseFloat(localStorage.getItem('myBudgetUSD')) || 0; 
     let nextId = transactions.length > 0 ? Math.max(...transactions.map(t => t.id)) + 1 : 1;
     let pieChart = null, barChart = null;
 
     const body = document.body;
-    
-    // Безопасный поиск элементов
     const $ = (id) => document.getElementById(id);
+    
     const els = {
         amount: $('amountInput'), desc: $('descInput'),
         category: $('categorySelect'), submit: $('submitBtn'),
         history: $('historyList'), balance: $('balanceValue'),
         budgetInput: $('budgetInput'), budgetInfo: $('budgetInfo'),
         progressFill: $('progressFill'), pieChart: $('pieChart'),
-        barChart: $('barChart'), heatmap: $('heatmapGrid'), keyboard: $('customKeyboard')
+        barChart: $('barChart'), heatmap: $('heatmapGrid')
     };
 
     function formatAmount(usdAmount) {
@@ -33,13 +33,11 @@
 
     function saveData() {
         localStorage.setItem('myTransactions', JSON.stringify(transactions));
-        localStorage.setItem('myBudget', budgetLimit);
+        localStorage.setItem('myBudgetUSD', budgetLimitUSD);
     }
 
-    // ГЛАВНАЯ ФУНКЦИЯ ПЕРЕВОДА
     function updateLanguage() {
         const t = translations[currentLang];
-        
         if ($('incomeLabel')) $('incomeLabel').textContent = t.income;
         if ($('expenseLabel')) $('expenseLabel').textContent = t.expense;
         if ($('balanceLabel')) $('balanceLabel').textContent = t.balance;
@@ -51,7 +49,6 @@
         if ($('typeIncome')) $('typeIncome').textContent = t.typeIncome;
         if ($('typeExpense')) $('typeExpense').textContent = t.typeExpense;
         if ($('themeToggle')) $('themeToggle').textContent = body.classList.contains('dark') ? t.themeLight : t.themeDark;
-        
         if ($('perAll')) $('perAll').textContent = t.allTime;
         if ($('perMonth')) $('perMonth').textContent = t.month;
         if ($('perWeek')) $('perWeek').textContent = t.week;
@@ -64,11 +61,9 @@
             els.category.options[4].text = '💊 ' + t.catHealth;
             els.category.options[5].text = '💼 ' + t.catSalary;
         }
-
         if ($('langRu')) $('langRu').classList.toggle('active', currentLang === 'ru');
         if ($('langBe')) $('langBe').classList.toggle('active', currentLang === 'be');
         if ($('langEn')) $('langEn').classList.toggle('active', currentLang === 'en');
-        
         updateUI();
     }
 
@@ -78,7 +73,6 @@
         const start = performance.now();
         const duration = 500;
         const symbol = { RUB: '₽', BYN: 'Br', USD: '$', EUR: '€' }[currentCurrency];
-        
         function step(now) {
             const progress = Math.min((now - start) / duration, 1);
             const current = from + (to - from) * progress;
@@ -88,8 +82,7 @@
         }
         requestAnimationFrame(step);
     }
-
-    function updateUI() {
+        function updateUI() {
         if (!els.balance) return;
 
         let incomeUSD = 0, expenseUSD = 0;
@@ -99,41 +92,38 @@
         const currentVal = parseFloat(els.balance.textContent.replace(/[^0-9.-]+/g,"")) / (EXCHANGE_RATES[currentCurrency] || 1) || 0;
         const targetVal = balanceUSD * (EXCHANGE_RATES[currentCurrency] || 1);
         animateBalance(currentVal * (EXCHANGE_RATES[currentCurrency] || 1), targetVal);
-
         els.balance.style.color = balanceUSD < 0 ? '#f87171' : '';
 
-        // Бюджет
         if (els.budgetInput && els.budgetInfo && els.progressFill) {
             const expenseInCurrency = expenseUSD * (EXCHANGE_RATES[currentCurrency] || 1);
-            els.budgetInput.value = budgetLimit > 0 ? budgetLimit : '';
-            if (budgetLimit > 0) {
-                const percent = Math.min((expenseInCurrency / budgetLimit) * 100, 100);
-                const left = budgetLimit - expenseInCurrency;
+            const budgetInCurrency = budgetLimitUSD * (EXCHANGE_RATES[currentCurrency] || 1);
+            
+            // Отображаем бюджет в выбранной валюте, но сохраняем в USD
+            if (budgetLimitUSD > 0) {
+                els.budgetInput.value = budgetInCurrency.toFixed(2);
+                const percent = Math.min((expenseInCurrency / budgetInCurrency) * 100, 100);
+                const left = budgetInCurrency - expenseInCurrency;
                 els.progressFill.style.width = `${percent}%`;
                 els.progressFill.style.background = left < 0 ? '#f87171' : (percent > 80 ? '#fbbf24' : '#34d399');
                 els.budgetInfo.textContent = left >= 0 
                     ? `${translations[currentLang].budgetLeft}: ${formatAmount(left / (EXCHANGE_RATES[currentCurrency] || 1))}`
                     : `${translations[currentLang].budgetOver} ${formatAmount(Math.abs(left) / (EXCHANGE_RATES[currentCurrency] || 1))}`;
             } else {
+                els.budgetInput.value = '';
                 els.progressFill.style.width = '0%';
                 els.budgetInfo.textContent = '';
             }
         }
 
-        // Фильтрация по периодам
         const now = new Date();
         let filteredTxs = transactions;
         if (currentPeriod === 'month') {
-            filteredTxs = transactions.filter(t => {
-                const d = new Date(t.date);
-                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-            });
+            filteredTxs = transactions.filter(t => { const d = new Date(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
         } else if (currentPeriod === 'week') {
             const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
             filteredTxs = transactions.filter(t => new Date(t.date) >= weekAgo);
         }
 
-        // История
         if (els.history) {
             if (filteredTxs.length === 0) {
                 els.history.innerHTML = `<li class="history-item" style="justify-content:center; opacity:0.6;">${translations[currentLang].historyEmpty}</li>`;
@@ -144,7 +134,6 @@
                     acc[date].push(t);
                     return acc;
                 }, {});
-
                 let html = '';
                 Object.keys(grouped).forEach(date => {
                     html += `<li style="margin-top:10px; font-size:0.8rem; color:var(--text-muted); font-weight:bold;">${date}</li>`;
@@ -162,13 +151,9 @@
             }
         }
 
-        // Графики
         if (els.pieChart && typeof Chart !== 'undefined') {
             const expensesByCategory = {};
-            filteredTxs.filter(t => t.type === 'expense').forEach(t => {
-                expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + t.amountUSD;
-            });
-            
+            filteredTxs.filter(t => t.type === 'expense').forEach(t => { expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + t.amountUSD; });
             const t = translations[currentLang];
             const catNames = { food: t.catFood, transport: t.catTransport, fun: t.catFun, health: t.catHealth, other: t.catOther };
             const labels = Object.keys(expensesByCategory).map(k => catNames[k] || k);
@@ -183,13 +168,8 @@
                 });
             }
 
-            // Столбчатая
             const expensesByDay = {};
-            filteredTxs.filter(t => t.type === 'expense').forEach(t => {
-                const day = new Date(t.date).getDate();
-                expensesByDay[day] = (expensesByDay[day] || 0) + t.amountUSD;
-            });
-            
+            filteredTxs.filter(t => t.type === 'expense').forEach(t => { const day = new Date(t.date).getDate(); expensesByDay[day] = (expensesByDay[day] || 0) + t.amountUSD; });
             const days = Array.from({length: 31}, (_, i) => i + 1);
             const dataBar = days.map(d => (expensesByDay[d] || 0) * (EXCHANGE_RATES[currentCurrency] || 1));
 
@@ -197,16 +177,12 @@
             if (els.barChart) {
                 barChart = new Chart(els.barChart, {
                     type: 'bar',
-                    data: {
-                        labels: days,
-                        datasets: [{ label: t.chartExpenses, data: dataBar, backgroundColor: '#818cf8', borderRadius: 4 }]
-                    },
+                    data: { labels: days, datasets: [{ label: t.chartExpenses, data: dataBar, backgroundColor: '#818cf8', borderRadius: 4 }] },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: body.classList.contains('dark') ? '#aaa' : '#333' } }, y: { ticks: { color: body.classList.contains('dark') ? '#aaa' : '#333' } } } }
                 });
             }
         }
 
-        // Тепловая карта
         if (els.heatmap) {
             els.heatmap.innerHTML = '';
             const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -218,7 +194,6 @@
                     dailyExpenses[day] = (dailyExpenses[day] || 0) + (t.amountUSD * (EXCHANGE_RATES[currentCurrency] || 1));
                 }
             });
-
             const maxExp = Math.max(...Object.values(dailyExpenses), 1);
             for (let i = 1; i <= daysInMonth; i++) {
                 const exp = dailyExpenses[i] || 0;
@@ -231,26 +206,21 @@
             }
         }
     }
-
-    // Свайпы
-    let startX = 0;
+        let startX = 0;
     window.swipeStart = function(e, id) {
         startX = e.touches ? e.touches[0].clientX : e.clientX;
         const item = e.currentTarget;
-        
         const moveHandler = (ev) => {
             const currentX = ev.touches ? ev.touches[0].clientX : ev.clientX;
             if (startX - currentX > 50) item.classList.add('swiped');
             else if (currentX - startX > 50) item.classList.remove('swiped');
         };
-        
         const endHandler = () => {
             document.removeEventListener('mousemove', moveHandler);
             document.removeEventListener('mouseup', endHandler);
             document.removeEventListener('touchmove', moveHandler);
             document.removeEventListener('touchend', endHandler);
         };
-        
         document.addEventListener('mousemove', moveHandler);
         document.addEventListener('mouseup', endHandler);
         document.addEventListener('touchmove', moveHandler);
@@ -259,29 +229,15 @@
 
     function addTx() {
         const amount = parseFloat(els.amount.value);
-        if (isNaN(amount) || amount <= 0) {
-            alert(translations[currentLang].alertAmount);
-            return;
-        }
-
+        if (isNaN(amount) || amount <= 0) { alert(translations[currentLang].alertAmount); return; }
         if (currentType === 'expense') {
             let incomeUSD = 0, expenseUSD = 0;
             transactions.forEach(t => t.type === 'income' ? incomeUSD += t.amountUSD : expenseUSD += t.amountUSD);
             const balanceUSD = incomeUSD - expenseUSD;
             const amountUSD = amount / (EXCHANGE_RATES[currentCurrency] || 1);
-            
-            if (amountUSD > balanceUSD) {
-                alert(`${translations[currentLang].alertNoMoney} ${formatAmount(balanceUSD)}`);
-                return;
-            }
+            if (amountUSD > balanceUSD) { alert(`${translations[currentLang].alertNoMoney} ${formatAmount(balanceUSD)}`); return; }
         }
-
-        transactions.push({
-            id: nextId++, type: currentType,
-            amountUSD: amount / (EXCHANGE_RATES[currentCurrency] || 1),
-            desc: els.desc.value.trim(), category: els.category.value,
-            date: new Date().toISOString()
-        });
+        transactions.push({ id: nextId++, type: currentType, amountUSD: amount / (EXCHANGE_RATES[currentCurrency] || 1), desc: els.desc.value.trim(), category: els.category.value, date: new Date().toISOString() });
         els.amount.value = ''; els.desc.value = '';
         saveData(); updateUI();
     }
@@ -291,25 +247,6 @@
         saveData(); updateUI();
     };
 
-    // Клавиатура
-    if (els.amount && els.keyboard) {
-        els.amount.addEventListener('focus', () => els.keyboard.classList.add('active'));
-        document.addEventListener('click', (e) => {
-            if (!els.amount.contains(e.target) && !els.keyboard.contains(e.target)) {
-                els.keyboard.classList.remove('active');
-            }
-        });
-        document.querySelectorAll('.kb-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const val = e.target.dataset.val;
-                if (val === 'back') els.amount.value = els.amount.value.slice(0, -1);
-                else els.amount.value += val;
-            });
-        });
-    }
-
-    // Экспорт/Импорт
     if ($('exportBtn')) {
         $('exportBtn').addEventListener('click', () => {
             const csv = ['id,type,amountUSD,desc,category,date', ...transactions.map(t => `${t.id},${t.type},${t.amountUSD},"${t.desc}",${t.category},${t.date}`)].join('\n');
@@ -343,8 +280,30 @@
         });
     }
 
-    // Обработчики
-    if (els.budgetInput) els.budgetInput.addEventListener('input', (e) => { budgetLimit = parseFloat(e.target.value) || 0; saveData(); updateUI(); });
+    if (els.budgetInput) {
+        els.budgetInput.addEventListener('input', (e) => { 
+            const valInCurrency = parseFloat(e.target.value) || 0;
+            budgetLimitUSD = valInCurrency / (EXCHANGE_RATES[currentCurrency] || 1);
+            saveData(); 
+            // Не вызываем updateUI целиком при вводе, чтобы не сбивать фокус, но обновляем полоску
+            if (els.budgetInfo && els.progressFill) {
+                 let incomeUSD = 0, expenseUSD = 0;
+                 transactions.forEach(t => t.type === 'income' ? incomeUSD += t.amountUSD : expenseUSD += t.amountUSD);
+                 const expenseInCurrency = expenseUSD * (EXCHANGE_RATES[currentCurrency] || 1);
+                 const budgetInCurrency = budgetLimitUSD * (EXCHANGE_RATES[currentCurrency] || 1);
+                 if (budgetLimitUSD > 0) {
+                     const percent = Math.min((expenseInCurrency / budgetInCurrency) * 100, 100);
+                     const left = budgetInCurrency - expenseInCurrency;
+                     els.progressFill.style.width = `${percent}%`;
+                     els.progressFill.style.background = left < 0 ? '#f87171' : (percent > 80 ? '#fbbf24' : '#34d399');
+                     els.budgetInfo.textContent = left >= 0 
+                         ? `${translations[currentLang].budgetLeft}: ${formatAmount(left / (EXCHANGE_RATES[currentCurrency] || 1))}`
+                         : `${translations[currentLang].budgetOver} ${formatAmount(Math.abs(left) / (EXCHANGE_RATES[currentCurrency] || 1))}`;
+                 }
+            }
+        });
+    }
+
     if (els.submit) els.submit.addEventListener('click', addTx);
     
     if ($('typeIncome')) $('typeIncome').addEventListener('click', () => { currentType = 'income'; $('typeIncome').classList.add('active'); $('typeExpense').classList.remove('active'); });

@@ -2,11 +2,12 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Финансовый трекер · PRO MAX</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e1b4b">
+    <!-- Библиотека графиков -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="dark">
@@ -19,7 +20,7 @@
                 <button data-lang="en" id="langEn">Eng</button>
             </div>
             <div class="theme-currency">
-                <button id="themeToggle" title="Тема">☀️ Светлая</button>
+                <button id="themeToggle" title="Сменить тему">☀️ Светлая</button>
                 <div class="select-wrapper">
                     <select id="currencySelect">
                         <option value="BYN">Br BYN</option>
@@ -43,10 +44,10 @@
             <div class="budget-info" id="budgetInfo">Осталось: 0.00</div>
         </div>
 
-        <!-- ВВОД -->
+        <!-- ВВОД (теперь без inputmode, чтобы работала обычная клава) -->
         <div class="input-panel glass">
             <div class="input-fields">
-                <input type="number" id="amountInput" placeholder="Сумма" min="0" step="0.01" inputmode="none">
+                <input type="number" id="amountInput" placeholder="Сумма" min="0" step="0.01">
                 <input type="text" id="descInput" placeholder="Описание">
                 <select id="categorySelect">
                     <option value="other">📦 Другое</option>
@@ -64,14 +65,6 @@
             <button id="submitBtn" class="submit-btn">Добавить</button>
         </div>
 
-        <!-- КАСТОМНАЯ КЛАВИАТУРА -->
-        <div id="customKeyboard" class="custom-keyboard">
-            <div class="kb-btn" data-val="1">1</div><div class="kb-btn" data-val="2">2</div><div class="kb-btn" data-val="3">3</div>
-            <div class="kb-btn" data-val="4">4</div><div class="kb-btn" data-val="5">5</div><div class="kb-btn" data-val="6">6</div>
-            <div class="kb-btn" data-val="7">7</div><div class="kb-btn" data-val="8">8</div><div class="kb-btn" data-val="9">9</div>
-            <div class="kb-btn" data-val=".">.</div><div class="kb-btn" data-val="0">0</div><div class="kb-btn" data-val="back">⌫</div>
-        </div>
-
         <!-- БАЛАНС -->
         <div class="balance-block glass balance-highlight">
             <span class="balance-label" id="balanceLabel">Баланс</span>
@@ -86,7 +79,7 @@
         </div>
 
         <!-- ГРАФИКИ -->
-        <div class="chart-container glass" style="height: 200px; margin-bottom: 10px;">
+        <div class="chart-container glass" style="height: 220px; margin-bottom: 10px;">
             <canvas id="pieChart"></canvas>
         </div>
         <div class="chart-container glass" style="height: 200px;">
@@ -117,6 +110,7 @@
             <ul class="history-list" id="historyList"></ul>
         </div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
