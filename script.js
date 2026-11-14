@@ -1,334 +1,211 @@
 (function() {
-    const EXCHANGE_RATES = { USD: 1, BYN: 2.9476, RUB: 80.5573, EUR: 0.9200 };
-    const translations = {
-        ru: { income: 'Доходы', expense: 'Затраты', balance: 'Баланс', historyTitle: 'История', themeDark: '🌙 Тёмная', themeLight: '☀️ Светлая', submit: 'Добавить', clearAll: '🗑 Очистить', typeIncome: '+ Доход', typeExpense: '− Расход', historyEmpty: 'Нет операций', records: 'записей', budgetLabel: 'Лимит на месяц', budgetLeft: 'Осталось', budgetOver: 'Перерасход!', alertNoMoney: 'Недостаточно средств! На балансе: ', alertAmount: 'Введите сумму больше нуля!', noDesc: 'Без описания', deleteTitle: 'Удалить', catOther: 'Другое', catFood: 'Еда', catTransport: 'Транспорт', catFun: 'Развлечения', catHealth: 'Здоровье', catSalary: 'Зарплата', allTime: 'Все время', month: 'Месяц', week: 'Неделя', heatmap: 'Карта расходов', chartExpenses: 'Расходы' },
-        be: { income: 'Даходы', expense: 'Затраты', balance: 'Баланс', historyTitle: 'Гісторыя', themeDark: '🌙 Цёмная', themeLight: '☀️ Светлая', submit: 'Дадаць', clearAll: '🗑 Ачысціць', typeIncome: '+ Даход', typeExpense: '− Затрата', historyEmpty: 'Няма аперацый', records: 'запісаў', budgetLabel: 'Ліміт на месяц', budgetLeft: 'Засталося', budgetOver: 'Перавыдаткі!', alertNoMoney: 'Недастаткова сродкаў! На балянсе: ', alertAmount: 'Увядзіце суму больш за нуль!', noDesc: 'Без апісання', deleteTitle: 'Выдаліць', catOther: 'Іншае', catFood: 'Ежа', catTransport: 'Транспарт', catFun: 'Забавы', catHealth: 'Здароўе', catSalary: 'Зарплата', allTime: 'Увесь час', month: 'Месяц', week: 'Тыдзень', heatmap: 'Карта выдаткаў', chartExpenses: 'Выдаткі' },
-        en: { income: 'Income', expense: 'Expenses', balance: 'Balance', historyTitle: 'History', themeDark: '🌙 Dark', themeLight: '☀️ Light', submit: 'Add', clearAll: '🗑 Clear', typeIncome: '+ Income', typeExpense: '− Expense', historyEmpty: 'No transactions', records: 'records', budgetLabel: 'Monthly Budget', budgetLeft: 'Left', budgetOver: 'Overspent!', alertNoMoney: 'Insufficient funds! Balance: ', alertAmount: 'Enter an amount greater than zero!', noDesc: 'No description', deleteTitle: 'Delete', catOther: 'Other', catFood: 'Food', catTransport: 'Transport', catFun: 'Fun', catHealth: 'Health', catSalary: 'Salary', allTime: 'All time', month: 'Month', week: 'Week', heatmap: 'Expense heatmap', chartExpenses: 'Expenses' }
+    const RATES = { USD: 1, BYN: 2.9476, RUB: 80.5573, EUR: 0.9200 };
+    const T = {
+        ru: { inc:'Доходы', exp:'Затраты', bal:'Баланс', hist:'История', thD:'🌙 Тёмная', thL:'☀️ Светлая', add:'Добавить', clr:'🗑 Очистить', tInc:'+ Доход', tExp:'− Расход', emp:'Нет операций', bL:'Лимит на месяц', bLeft:'Осталось', bOver:'Перерасход!', noM:'Недостаточно средств! На балансе: ', noA:'Введите сумму > 0!', noD:'Без описания', cO:'Другое', cF:'Еда', cT:'Транспорт', cFu:'Развлечения', cH:'Здоровье', cS:'Зарплата', aT:'Все время', mo:'Месяц', we:'Неделя', hm:'Карта расходов', chE:'Расходы' },
+        be: { inc:'Даходы', exp:'Затраты', bal:'Баланс', hist:'Гісторыя', thD:'🌙 Цёмная', thL:'☀️ Светлая', add:'Дадаць', clr:'🗑 Ачысціць', tInc:'+ Даход', tExp:'− Затрата', emp:'Няма аперацый', bL:'Ліміт на месяц', bLeft:'Засталося', bOver:'Перавыдаткі!', noM:'Недастаткова сродкаў! На балянсе: ', noA:'Увядзіце суму > 0!', noD:'Без апісання', cO:'Іншае', cF:'Ежа', cT:'Транспарт', cFu:'Забавы', cH:'Здароўе', cS:'Зарплата', aT:'Увесь час', mo:'Месяц', we:'Тыдзень', hm:'Карта выдаткаў', chE:'Выдаткі' },
+        en: { inc:'Income', exp:'Expenses', bal:'Balance', hist:'History', thD:'🌙 Dark', thL:'☀️ Light', add:'Add', clr:'🗑 Clear', tInc:'+ Income', tExp:'− Expense', emp:'No transactions', bL:'Monthly Budget', bLeft:'Left', bOver:'Overspent!', noM:'Insufficient funds! Balance: ', noA:'Enter amount > 0!', noD:'No description', cO:'Other', cF:'Food', cT:'Transport', cFu:'Fun', cH:'Health', cS:'Salary', aT:'All time', mo:'Month', we:'Week', hm:'Expense heatmap', chE:'Expenses' }
     };
 
-    let currentLang = 'ru', currentCurrency = 'BYN', currentType = 'income', currentPeriod = 'all';
-    let transactions = JSON.parse(localStorage.getItem('myTransactions')) || [];
-    // Храним лимит в USD
-    let budgetLimitUSD = parseFloat(localStorage.getItem('myBudgetUSD')) || 0; 
-    let nextId = transactions.length > 0 ? Math.max(...transactions.map(t => t.id)) + 1 : 1;
-    let pieChart = null, barChart = null;
+    let lang='ru', curr='BYN', type='income', per='all';
+    let txs = JSON.parse(localStorage.getItem('myTxs')) || [];
+    let bUSD = parseFloat(localStorage.getItem('myB')) || 0; 
+    let nId = txs.length ? Math.max(...txs.map(t=>t.id))+1 : 1;
+    let pC=null, bC=null, sx=0;
 
-    const body = document.body;
-    const $ = (id) => document.getElementById(id);
-    
-    const els = {
-        amount: $('amountInput'), desc: $('descInput'),
-        category: $('categorySelect'), submit: $('submitBtn'),
-        history: $('historyList'), balance: $('balanceValue'),
-        budgetInput: $('budgetInput'), budgetInfo: $('budgetInfo'),
-        progressFill: $('progressFill'), pieChart: $('pieChart'),
-        barChart: $('barChart'), heatmap: $('heatmapGrid')
+    const $ = id => document.getElementById(id);
+    const s = { am:$('amountInput'), ds:$('descInput'), cat:$('categorySelect'), sub:$('submitBtn'), hL:$('historyList'), bal:$('balanceValue'), bI:$('budgetInput'), bF:$('budgetInfo'), pF:$('progressFill'), pC:$('pieChart'), bC:$('barChart'), hm:$('heatmapGrid') };
+
+    const fmt = u => {
+        const sym = {RUB:'₽', BYN:'Br', USD:'$', EUR:'€'}[curr];
+        return sym + new Intl.NumberFormat('en-US',{useGrouping:false,maximumFractionDigits:2}).format(u * RATES[curr]);
     };
+    const save = () => { localStorage.setItem('myTxs',JSON.stringify(txs)); localStorage.setItem('myB',bUSD); };
 
-    function formatAmount(usdAmount) {
-        const symbols = { RUB: '₽', BYN: 'Br', USD: '$', EUR: '€' };
-        const converted = usdAmount * (EXCHANGE_RATES[currentCurrency] || 1);
-        return `${symbols[currentCurrency]}${new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 2 }).format(converted)}`;
+    function updLang() {
+        const t = T[lang];
+        ['inc','exp','bal','hist','hm'].forEach(k => { const el=$(k+'Title')||$(k+'Label'); if(el) el.textContent=t[k]; });
+        if($('budgetLabel')) $('budgetLabel').textContent=t.bL;
+        if($('submitBtn')) $('submitBtn').textContent=t.add;
+        if($('clearAllBtn')) $('clearAllBtn').textContent=t.clr;
+        if($('typeIncome')) $('typeIncome').textContent=t.tInc;
+        if($('typeExpense')) $('typeExpense').textContent=t.tExp;
+        if($('themeToggle')) $('themeToggle').textContent=document.body.classList.contains('dark')?t.thL:t.thD;
+        if($('perAll')) $('perAll').textContent=t.aT;
+        if($('perMonth')) $('perMonth').textContent=t.mo;
+        if($('perWeek')) $('perWeek').textContent=t.we;
+        if(s.cat) { s.cat.options[0].text='📦 '+t.cO; s.cat.options[1].text='🍔 '+t.cF; s.cat.options[2].text='🚗 '+t.cT; s.cat.options[3].text='🎮 '+t.cFu; s.cat.options[4].text='💊 '+t.cH; s.cat.options[5].text='💼 '+t.cS; }
+        ['Ru','Be','En'].forEach(l => { const el=$('lang'+l); if(el) el.classList.toggle('active', lang===l.toLowerCase()); });
+        updUI();
     }
 
-    function saveData() {
-        localStorage.setItem('myTransactions', JSON.stringify(transactions));
-        localStorage.setItem('myBudgetUSD', budgetLimitUSD);
-    }
-
-    function updateLanguage() {
-        const t = translations[currentLang];
-        if ($('incomeLabel')) $('incomeLabel').textContent = t.income;
-        if ($('expenseLabel')) $('expenseLabel').textContent = t.expense;
-        if ($('balanceLabel')) $('balanceLabel').textContent = t.balance;
-        if ($('historyTitle')) $('historyTitle').textContent = t.historyTitle;
-        if ($('heatmapTitle')) $('heatmapTitle').textContent = t.heatmap;
-        if ($('budgetLabel')) $('budgetLabel').textContent = t.budgetLabel;
-        if ($('submitBtn')) $('submitBtn').textContent = t.submit;
-        if ($('clearAllBtn')) $('clearAllBtn').textContent = t.clearAll;
-        if ($('typeIncome')) $('typeIncome').textContent = t.typeIncome;
-        if ($('typeExpense')) $('typeExpense').textContent = t.typeExpense;
-        if ($('themeToggle')) $('themeToggle').textContent = body.classList.contains('dark') ? t.themeLight : t.themeDark;
-        if ($('perAll')) $('perAll').textContent = t.allTime;
-        if ($('perMonth')) $('perMonth').textContent = t.month;
-        if ($('perWeek')) $('perWeek').textContent = t.week;
-        
-        if (els.category) {
-            els.category.options[0].text = '📦 ' + t.catOther;
-            els.category.options[1].text = '🍔 ' + t.catFood;
-            els.category.options[2].text = '🚗 ' + t.catTransport;
-            els.category.options[3].text = '🎮 ' + t.catFun;
-            els.category.options[4].text = '💊 ' + t.catHealth;
-            els.category.options[5].text = '💼 ' + t.catSalary;
-        }
-        if ($('langRu')) $('langRu').classList.toggle('active', currentLang === 'ru');
-        if ($('langBe')) $('langBe').classList.toggle('active', currentLang === 'be');
-        if ($('langEn')) $('langEn').classList.toggle('active', currentLang === 'en');
-        updateUI();
-    }
-
-    function animateBalance(from, to) {
-        const el = els.balance;
-        if (!el) return;
-        const start = performance.now();
-        const duration = 500;
-        const symbol = { RUB: '₽', BYN: 'Br', USD: '$', EUR: '€' }[currentCurrency];
-        function step(now) {
-            const progress = Math.min((now - start) / duration, 1);
-            const current = from + (to - from) * progress;
-            el.textContent = `${symbol}${new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 2 }).format(current)}`;
-            if (progress < 1) requestAnimationFrame(step);
-            else el.textContent = formatAmount(to / (EXCHANGE_RATES[currentCurrency] || 1));
-        }
+    function animBal(f, to) {
+        if(!s.bal) return;
+        const st=performance.now(), dur=500, sym={RUB:'₽',BYN:'Br',USD:'$',EUR:'€'}[curr];
+        const step = now => {
+            const p=Math.min((now-st)/dur,1), c=f+(to-f)*p;
+            s.bal.textContent = sym + new Intl.NumberFormat('en-US',{useGrouping:false,maximumFractionDigits:2}).format(c);
+            if(p<1) requestAnimationFrame(step);
+            else s.bal.textContent = fmt(to/RATES[curr]);
+        };
         requestAnimationFrame(step);
     }
-        function updateUI() {
-        if (!els.balance) return;
 
-        let incomeUSD = 0, expenseUSD = 0;
-        transactions.forEach(t => t.type === 'income' ? incomeUSD += t.amountUSD : expenseUSD += t.amountUSD);
-        const balanceUSD = incomeUSD - expenseUSD;
+    function updUI() {
+        if(!s.bal) return;
+        let inc=0, exp=0;
+        txs.forEach(t=>t.type==='income'?inc+=t.amountUSD:exp+=t.amountUSD);
+        const balUSD = inc - exp;
         
-        const currentVal = parseFloat(els.balance.textContent.replace(/[^0-9.-]+/g,"")) / (EXCHANGE_RATES[currentCurrency] || 1) || 0;
-        const targetVal = balanceUSD * (EXCHANGE_RATES[currentCurrency] || 1);
-        animateBalance(currentVal * (EXCHANGE_RATES[currentCurrency] || 1), targetVal);
-        els.balance.style.color = balanceUSD < 0 ? '#f87171' : '';
+        const curV = parseFloat(s.bal.textContent.replace(/[^0-9.-]+/g,""))/RATES[curr] || 0;
+        animBal(curV*RATES[curr], balUSD*RATES[curr]);
+        s.bal.style.color = balUSD<0 ? '#f87171' : '';
 
-        if (els.budgetInput && els.budgetInfo && els.progressFill) {
-            const expenseInCurrency = expenseUSD * (EXCHANGE_RATES[currentCurrency] || 1);
-            const budgetInCurrency = budgetLimitUSD * (EXCHANGE_RATES[currentCurrency] || 1);
-            
-            // Отображаем бюджет в выбранной валюте, но сохраняем в USD
-            if (budgetLimitUSD > 0) {
-                els.budgetInput.value = budgetInCurrency.toFixed(2);
-                const percent = Math.min((expenseInCurrency / budgetInCurrency) * 100, 100);
-                const left = budgetInCurrency - expenseInCurrency;
-                els.progressFill.style.width = `${percent}%`;
-                els.progressFill.style.background = left < 0 ? '#f87171' : (percent > 80 ? '#fbbf24' : '#34d399');
-                els.budgetInfo.textContent = left >= 0 
-                    ? `${translations[currentLang].budgetLeft}: ${formatAmount(left / (EXCHANGE_RATES[currentCurrency] || 1))}`
-                    : `${translations[currentLang].budgetOver} ${formatAmount(Math.abs(left) / (EXCHANGE_RATES[currentCurrency] || 1))}`;
-            } else {
-                els.budgetInput.value = '';
-                els.progressFill.style.width = '0%';
-                els.budgetInfo.textContent = '';
-            }
+        if(s.bI && s.bF && s.pF) {
+            const eInC = exp*RATES[curr], bInC = bUSD*RATES[curr];
+            if(bUSD>0) {
+                s.bI.value = bInC.toFixed(2);
+                const pc = Math.min((eInC/bInC)*100,100), lft = bInC-eInC;
+                s.pF.style.width = pc+'%';
+                s.pF.style.background = lft<0?'#f87171':(pc>80?'#fbbf24':'#34d399');
+                s.bF.textContent = lft>=0 ? `${T[lang].bLeft}: ${fmt(lft/RATES[curr])}` : `${T[lang].bOver} ${fmt(Math.abs(lft)/RATES[curr])}`;
+            } else { s.bI.value=''; s.pF.style.width='0%'; s.bF.textContent=''; }
         }
 
         const now = new Date();
-        let filteredTxs = transactions;
-        if (currentPeriod === 'month') {
-            filteredTxs = transactions.filter(t => { const d = new Date(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
-        } else if (currentPeriod === 'week') {
-            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            filteredTxs = transactions.filter(t => new Date(t.date) >= weekAgo);
-        }
+        let fTxs = txs;
+        if(per==='month') fTxs = txs.filter(t=>{const d=new Date(t.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});
+        if(per==='week') { const wA=new Date(now.getTime()-7*24*60*60*1000); fTxs=txs.filter(t=>new Date(t.date)>=wA); }
 
-        if (els.history) {
-            if (filteredTxs.length === 0) {
-                els.history.innerHTML = `<li class="history-item" style="justify-content:center; opacity:0.6;">${translations[currentLang].historyEmpty}</li>`;
-            } else {
-                const grouped = filteredTxs.reduce((acc, t) => {
-                    const date = new Date(t.date).toLocaleDateString(currentLang === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'long' });
-                    if (!acc[date]) acc[date] = [];
-                    acc[date].push(t);
-                    return acc;
-                }, {});
-                let html = '';
-                Object.keys(grouped).forEach(date => {
-                    html += `<li style="margin-top:10px; font-size:0.8rem; color:var(--text-muted); font-weight:bold;">${date}</li>`;
-                    html += grouped[date].sort((a,b)=>b.id-a.id).map(t => `
-                        <li class="history-item ${t.type === 'income' ? 'income-item' : 'expense-item'}" onmousedown="swipeStart(event, ${t.id})" ontouchstart="swipeStart(event, ${t.id})">
-                            <div class="swipe-delete" onclick="deleteTx(${t.id})">✕</div>
+        if(s.hL) {
+            if(!fTxs.length) s.hL.innerHTML = `<li class="history-item" style="justify-content:center;opacity:0.6;">${T[lang].emp}</li>`;
+            else {
+                const grp = fTxs.reduce((a,t)=>{
+                    const d = new Date(t.date).toLocaleDateString(lang==='en'?'en-US':'ru-RU',{day:'numeric',month:'long'});
+                    (a[d]=a[d]||[]).push(t); return a;
+                },{});
+                let h='';
+                Object.keys(grp).forEach(d=>{
+                    h+=`<li style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);font-weight:bold;">${d}</li>`;
+                    h+=grp[d].sort((a,b)=>b.id-a.id).map(t=>`
+                        <li class="history-item ${t.type==='income'?'income-item':'expense-item'}" onmousedown="swipe(event,${t.id})" ontouchstart="swipe(event,${t.id})">
+                            <div class="swipe-delete" onclick="delTx(${t.id})">✕</div>
                             <div class="history-content">
-                                <span class="history-desc">${t.category === 'food' ? '🍔' : t.category === 'transport' ? '🚗' : t.category === 'fun' ? '🎮' : t.category === 'health' ? '💊' : t.category === 'salary' ? '💼' : '📦'} ${t.desc || translations[currentLang].noDesc}</span>
-                                <span class="history-amount">${t.type === 'income' ? '+' : '−'} ${formatAmount(t.amountUSD)}</span>
+                                <span class="history-desc">${t.category==='food'?'🍔':t.category==='transport'?'🚗':t.category==='fun'?'🎮':t.category==='health'?'💊':t.category==='salary'?'💼':'📦'} ${t.desc||T[lang].noD}</span>
+                                <span class="history-amount">${t.type==='income'?'+':'−'} ${fmt(t.amountUSD)}</span>
                             </div>
                         </li>
                     `).join('');
                 });
-                els.history.innerHTML = html;
+                s.hL.innerHTML = h;
             }
         }
 
-        if (els.pieChart && typeof Chart !== 'undefined') {
-            const expensesByCategory = {};
-            filteredTxs.filter(t => t.type === 'expense').forEach(t => { expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + t.amountUSD; });
-            const t = translations[currentLang];
-            const catNames = { food: t.catFood, transport: t.catTransport, fun: t.catFun, health: t.catHealth, other: t.catOther };
-            const labels = Object.keys(expensesByCategory).map(k => catNames[k] || k);
-            const dataPie = Object.values(expensesByCategory).map(v => v * (EXCHANGE_RATES[currentCurrency] || 1));
+        if(s.pC && typeof Chart!=='undefined') {
+            const eC = {}; fTxs.filter(t=>t.type==='expense').forEach(t=>{eC[t.category]=(eC[t.category]||0)+t.amountUSD;});
+            const cN={food:T[lang].cF,transport:T[lang].cT,fun:T[lang].cFu,health:T[lang].cH,other:T[lang].cO};
+            const lbls = Object.keys(eC).map(k=>cN[k]||k), dat = Object.values(eC).map(v=>v*RATES[curr]);
+            if(pC) pC.destroy();
+            if(dat.length) pC=new Chart(s.pC,{type:'doughnut',data:{labels:lbls,datasets:[{data:dat,backgroundColor:['#f87171','#fbbf24','#34d399','#60a5fa','#a78bfa'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,animation:{animateRotate:true},plugins:{legend:{position:'right',labels:{color:document.body.classList.contains('dark')?'#fff':'#000'}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmt(c.parsed/RATES[curr])}`}}}}});
 
-            if (pieChart) pieChart.destroy();
-            if (dataPie.length > 0) {
-                pieChart = new Chart(els.pieChart, {
-                    type: 'doughnut',
-                    data: { labels: labels, datasets: [{ data: dataPie, backgroundColor: ['#f87171', '#fbbf24', '#34d399', '#60a5fa', '#a78bfa'], borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, animation: { animateRotate: true }, plugins: { legend: { position: 'right', labels: { color: body.classList.contains('dark') ? '#fff' : '#000' } }, tooltip: { callbacks: { label: function(context) { let label = context.label || ''; if (label) { label += ': '; } if (context.parsed !== null) { label += formatAmount(context.parsed / (EXCHANGE_RATES[currentCurrency] || 1)); } return label; } } } } }
-                });
-            }
-
-            const expensesByDay = {};
-            filteredTxs.filter(t => t.type === 'expense').forEach(t => { const day = new Date(t.date).getDate(); expensesByDay[day] = (expensesByDay[day] || 0) + t.amountUSD; });
-            const days = Array.from({length: 31}, (_, i) => i + 1);
-            const dataBar = days.map(d => (expensesByDay[d] || 0) * (EXCHANGE_RATES[currentCurrency] || 1));
-
-            if (barChart) barChart.destroy();
-            if (els.barChart) {
-                barChart = new Chart(els.barChart, {
-                    type: 'bar',
-                    data: { labels: days, datasets: [{ label: t.chartExpenses, data: dataBar, backgroundColor: '#818cf8', borderRadius: 4 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: body.classList.contains('dark') ? '#aaa' : '#333' } }, y: { ticks: { color: body.classList.contains('dark') ? '#aaa' : '#333' } } } }
-                });
-            }
+            const eD={}; fTxs.filter(t=>t.type==='expense').forEach(t=>{const d=new Date(t.date).getDate();eD[d]=(eD[d]||0)+t.amountUSD;});
+            const days=Array.from({length:31},(_,i)=>i+1), datB=days.map(d=>(eD[d]||0)*RATES[curr]);
+            if(bC) bC.destroy();
+            if(s.bC) bC=new Chart(s.bC,{type:'bar',data:{labels:days,datasets:[{label:T[lang].chE,data:datB,backgroundColor:'#818cf8',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#aaa'}},y:{ticks:{color:'#aaa'}}}}});
         }
 
-        if (els.heatmap) {
-            els.heatmap.innerHTML = '';
-            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-            const dailyExpenses = {};
-            transactions.filter(t => t.type === 'expense').forEach(t => {
-                const d = new Date(t.date);
-                if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-                    const day = d.getDate();
-                    dailyExpenses[day] = (dailyExpenses[day] || 0) + (t.amountUSD * (EXCHANGE_RATES[currentCurrency] || 1));
-                }
-            });
-            const maxExp = Math.max(...Object.values(dailyExpenses), 1);
-            for (let i = 1; i <= daysInMonth; i++) {
-                const exp = dailyExpenses[i] || 0;
-                const intensity = exp / maxExp;
-                const cell = document.createElement('div');
-                cell.className = 'heatmap-cell';
-                cell.style.background = intensity > 0 ? `rgba(129, 140, 248, ${0.2 + intensity * 0.8})` : 'rgba(255, 255, 255, 0.1)';
-                cell.setAttribute('data-tooltip', `${i}: ${formatAmount(exp / (EXCHANGE_RATES[currentCurrency] || 1))}`);
-                els.heatmap.appendChild(cell);
+        if(s.hm) {
+            s.hm.innerHTML='';
+            const dIM = new Date(now.getFullYear(),now.getMonth()+1,0).getDate(), dEx={};
+            txs.filter(t=>t.type==='expense').forEach(t=>{const d=new Date(t.date);if(d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear())dEx[d.getDate()]=(dEx[d.getDate()]||0)+t.amountUSD*RATES[curr];});
+            const mE = Math.max(...Object.values(dEx),1);
+            for(let i=1;i<=dIM;i++){
+                const ex=dEx[i]||0, inten=ex/mE, cell=document.createElement('div');
+                cell.className='heatmap-cell';
+                cell.style.background = inten>0?`rgba(129,140,248,${0.2+inten*0.8})`:'rgba(255,255,255,0.1)';
+                cell.setAttribute('data-tooltip',`${i}: ${fmt(ex/RATES[curr])}`);
+                s.hm.appendChild(cell);
             }
         }
     }
-        let startX = 0;
-    window.swipeStart = function(e, id) {
-        startX = e.touches ? e.touches[0].clientX : e.clientX;
+
+    window.swipe = function(e,id) {
+        sx = e.touches ? e.touches[0].clientX : e.clientX;
         const item = e.currentTarget;
-        const moveHandler = (ev) => {
-            const currentX = ev.touches ? ev.touches[0].clientX : ev.clientX;
-            if (startX - currentX > 50) item.classList.add('swiped');
-            else if (currentX - startX > 50) item.classList.remove('swiped');
+        const move = ev => {
+            const cx = ev.touches ? ev.touches[0].clientX : ev.clientX;
+            if(sx-cx>50) item.classList.add('swiped');
+            else if(cx-sx>50) item.classList.remove('swiped');
         };
-        const endHandler = () => {
-            document.removeEventListener('mousemove', moveHandler);
-            document.removeEventListener('mouseup', endHandler);
-            document.removeEventListener('touchmove', moveHandler);
-            document.removeEventListener('touchend', endHandler);
+        const end = () => {
+            document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',end);
+            document.removeEventListener('touchmove',move); document.removeEventListener('touchend',end);
         };
-        document.addEventListener('mousemove', moveHandler);
-        document.addEventListener('mouseup', endHandler);
-        document.addEventListener('touchmove', moveHandler);
-        document.addEventListener('touchend', endHandler);
+        document.addEventListener('mousemove',move); document.addEventListener('mouseup',end);
+        document.addEventListener('touchmove',move); document.addEventListener('touchend',end);
     };
 
     function addTx() {
-        const amount = parseFloat(els.amount.value);
-        if (isNaN(amount) || amount <= 0) { alert(translations[currentLang].alertAmount); return; }
-        if (currentType === 'expense') {
-            let incomeUSD = 0, expenseUSD = 0;
-            transactions.forEach(t => t.type === 'income' ? incomeUSD += t.amountUSD : expenseUSD += t.amountUSD);
-            const balanceUSD = incomeUSD - expenseUSD;
-            const amountUSD = amount / (EXCHANGE_RATES[currentCurrency] || 1);
-            if (amountUSD > balanceUSD) { alert(`${translations[currentLang].alertNoMoney} ${formatAmount(balanceUSD)}`); return; }
+        const a = parseFloat(s.am.value);
+        if(isNaN(a)||a<=0) { alert(T[lang].noA); return; }
+        if(type==='expense') {
+            let inc=0, exp=0; txs.forEach(t=>t.type==='income'?inc+=t.amountUSD:exp+=t.amountUSD);
+            const aUSD = a/RATES[curr];
+            if(aUSD > inc-exp) { alert(`${T[lang].noM} ${fmt(inc-exp)}`); return; }
         }
-        transactions.push({ id: nextId++, type: currentType, amountUSD: amount / (EXCHANGE_RATES[currentCurrency] || 1), desc: els.desc.value.trim(), category: els.category.value, date: new Date().toISOString() });
-        els.amount.value = ''; els.desc.value = '';
-        saveData(); updateUI();
+        txs.push({id:nId++, type, amountUSD:a/RATES[curr], desc:s.ds.value.trim(), category:s.cat.value, date:new Date().toISOString()});
+        s.am.value=''; s.ds.value='';
+        save(); updUI();
     }
 
-    window.deleteTx = function(id) {
-        transactions = transactions.filter(t => t.id !== id);
-        saveData(); updateUI();
+    window.delTx = function(id) { txs = txs.filter(t=>t.id!==id); save(); updUI(); };
+
+    if($('exportBtn')) $('exportBtn').onclick = () => {
+        const csv = ['id,type,amountUSD,desc,category,date',...txs.map(t=>`${t.id},${t.type},${t.amountUSD},"${t.desc}",${t.category},${t.date}`)].join('\n');
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})); a.download = 'finance_export.csv'; a.click();
     };
 
-    if ($('exportBtn')) {
-        $('exportBtn').addEventListener('click', () => {
-            const csv = ['id,type,amountUSD,desc,category,date', ...transactions.map(t => `${t.id},${t.type},${t.amountUSD},"${t.desc}",${t.category},${t.date}`)].join('\n');
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'finance_export.csv';
-            link.click();
-        });
-    }
+    if($('importInput')) $('importInput').onchange = (e) => {
+        const f = e.target.files[0]; if(!f) return;
+        const r = new FileReader();
+        r.onload = ev => {
+            try {
+                ev.target.result.split('\n').slice(1).forEach(row => {
+                    if(!row.trim()) return;
+                    const [id,ty,aU,d,c,dt] = row.split(',');
+                    txs.push({id:nId++, type:ty, amountUSD:parseFloat(aU), desc:(d||'').replace(/^"|"$/g,''), category:c||'other', date:dt||new Date().toISOString()});
+                });
+                save(); updUI(); alert('Импорт успешен!');
+            } catch(err) { alert('Ошибка файла'); }
+        };
+        r.readAsText(f);
+    };
 
-    if ($('importInput')) {
-        $('importInput').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                try {
-                    const rows = ev.target.result.split('\n').slice(1);
-                    rows.forEach(row => {
-                        if (!row.trim()) return;
-                        const [id, type, amountUSD, desc, category, date] = row.split(',');
-                        const cleanDesc = desc ? desc.replace(/^"|"$/g, '') : '';
-                        transactions.push({ id: nextId++, type, amountUSD: parseFloat(amountUSD), desc: cleanDesc, category: category || 'other', date: date || new Date().toISOString() });
-                    });
-                    saveData(); updateUI();
-                    alert('Данные импортированы!');
-                } catch (err) { alert('Ошибка чтения файла'); }
-            };
-            reader.readAsText(file);
-        });
-    }
+    if(s.bI) s.bI.oninput = (e) => {
+        bUSD = (parseFloat(e.target.value)||0) / RATES[curr]; save();
+        let inc=0, exp=0; txs.forEach(t=>t.type==='income'?inc+=t.amountUSD:exp+=t.amountUSD);
+        const eInC=exp*RATES[curr], bInC=bUSD*RATES[curr];
+        if(bUSD>0 && s.bF && s.pF) {
+            const pc = Math.min((eInC/bInC)*100,100), lft = bInC-eInC;
+            s.pF.style.width=pc+'%'; s.pF.style.background = lft<0?'#f87171':(pc>80?'#fbbf24':'#34d399');
+            s.bF.textContent = lft>=0 ? `${T[lang].bLeft}: ${fmt(lft/RATES[curr])}` : `${T[lang].bOver} ${fmt(Math.abs(lft)/RATES[curr])}`;
+        }
+    };
 
-    if (els.budgetInput) {
-        els.budgetInput.addEventListener('input', (e) => { 
-            const valInCurrency = parseFloat(e.target.value) || 0;
-            budgetLimitUSD = valInCurrency / (EXCHANGE_RATES[currentCurrency] || 1);
-            saveData(); 
-            // Не вызываем updateUI целиком при вводе, чтобы не сбивать фокус, но обновляем полоску
-            if (els.budgetInfo && els.progressFill) {
-                 let incomeUSD = 0, expenseUSD = 0;
-                 transactions.forEach(t => t.type === 'income' ? incomeUSD += t.amountUSD : expenseUSD += t.amountUSD);
-                 const expenseInCurrency = expenseUSD * (EXCHANGE_RATES[currentCurrency] || 1);
-                 const budgetInCurrency = budgetLimitUSD * (EXCHANGE_RATES[currentCurrency] || 1);
-                 if (budgetLimitUSD > 0) {
-                     const percent = Math.min((expenseInCurrency / budgetInCurrency) * 100, 100);
-                     const left = budgetInCurrency - expenseInCurrency;
-                     els.progressFill.style.width = `${percent}%`;
-                     els.progressFill.style.background = left < 0 ? '#f87171' : (percent > 80 ? '#fbbf24' : '#34d399');
-                     els.budgetInfo.textContent = left >= 0 
-                         ? `${translations[currentLang].budgetLeft}: ${formatAmount(left / (EXCHANGE_RATES[currentCurrency] || 1))}`
-                         : `${translations[currentLang].budgetOver} ${formatAmount(Math.abs(left) / (EXCHANGE_RATES[currentCurrency] || 1))}`;
-                 }
-            }
-        });
-    }
-
-    if (els.submit) els.submit.addEventListener('click', addTx);
+    if(s.sub) s.sub.onclick = addTx;
+    if($('typeIncome')) $('typeIncome').onclick = () => { type='income'; $('typeIncome').classList.add('active'); $('typeExpense').classList.remove('active'); };
+    if($('typeExpense')) $('typeExpense').onclick = () => { type='expense'; $('typeExpense').classList.add('active'); $('typeIncome').classList.remove('active'); };
+    if($('clearAllBtn')) $('clearAllBtn').onclick = () => { if(confirm(T[lang].clr+'?')) { txs=[]; save(); updUI(); } };
+    if($('themeToggle')) $('themeToggle').onclick = () => { document.body.classList.toggle('dark'); document.body.classList.toggle('light'); updLang(); };
+    if($('currencySelect')) $('currencySelect').onchange = (e) => { curr=e.target.value; updUI(); };
+    ['Ru','Be','En'].forEach(l => { const el=$('lang'+l); if(el) el.onclick = () => { lang=l.toLowerCase(); updLang(); }; });
     
-    if ($('typeIncome')) $('typeIncome').addEventListener('click', () => { currentType = 'income'; $('typeIncome').classList.add('active'); $('typeExpense').classList.remove('active'); });
-    if ($('typeExpense')) $('typeExpense').addEventListener('click', () => { currentType = 'expense'; $('typeExpense').classList.add('active'); $('typeIncome').classList.remove('active'); });
-    
-    if ($('clearAllBtn')) $('clearAllBtn').addEventListener('click', () => { if(confirm(translations[currentLang].clearAll + '?')) { transactions = []; saveData(); updateUI(); } });
-    if ($('themeToggle')) $('themeToggle').addEventListener('click', () => { body.classList.toggle('dark'); body.classList.toggle('light'); updateLanguage(); });
-    if ($('currencySelect')) $('currencySelect').addEventListener('change', (e) => { currentCurrency = e.target.value; updateUI(); });
-
-    if ($('langRu')) $('langRu').addEventListener('click', () => { currentLang = 'ru'; updateLanguage(); });
-    if ($('langBe')) $('langBe').addEventListener('click', () => { currentLang = 'be'; updateLanguage(); });
-    if ($('langEn')) $('langEn').addEventListener('click', () => { currentLang = 'en'; updateLanguage(); });
-
     document.querySelectorAll('.period-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            currentPeriod = e.target.dataset.period;
-            updateUI();
-        });
+        btn.onclick = (e) => {
+            document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+            e.target.classList.add('active'); per=e.target.dataset.period; updUI();
+        };
     });
 
-    updateLanguage();
-
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW не зарегистрирован', err));
-    }
+    updLang();
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();

@@ -125,6 +125,8 @@ button:active, select:active {
     box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
+input[type="number"] { cursor: text; }
+
 body.dark select option { background-color: #2a2d35; color: #f1f5ff; padding: 8px; }
 body.light select option { background-color: #ffffff; color: #1e2433; padding: 8px; }
 
@@ -199,7 +201,6 @@ body.light select option { background-color: #ffffff; color: #1e2433; padding: 8
     min-width: 120px;
     padding: 0.85rem 1.1rem;
     font-size: 0.95rem;
-    cursor: text;
 }
 
 .input-fields input:focus {

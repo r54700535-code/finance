@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Финансовый трекер · PRO MAX</title>
+    <!-- Подключаем стили -->
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e1b4b">
-    <!-- Библиотека графиков -->
+    <!-- Подключаем библиотеку графиков -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="dark">
@@ -44,7 +45,7 @@
             <div class="budget-info" id="budgetInfo">Осталось: 0.00</div>
         </div>
 
-        <!-- ВВОД (теперь без inputmode, чтобы работала обычная клава) -->
+        <!-- ВВОД -->
         <div class="input-panel glass">
             <div class="input-fields">
                 <input type="number" id="amountInput" placeholder="Сумма" min="0" step="0.01">
@@ -111,6 +112,7 @@
         </div>
     </div>
 
+    <!-- Скрипт -->
     <script src="script.js"></script>
 </body>
 </html>
